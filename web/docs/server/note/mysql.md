@@ -196,7 +196,7 @@ loose-default-character-set = utf8mb4
 
 - [MySQL :: MySQL 5.6 リファレンスマニュアル :: 10.1.4 接続文字セットおよび照合順序](https://dev.mysql.com/doc/refman/5.6/ja/charset-connection.html)
 
-> クライアントはサーバーに接続するときに、使用する文字セットの名前を送信します。サーバーはこの名前を使用して、character_set_client、character_set_results、および character_set_connection システム変数を設定します。実際には、サーバーは文字セット名を使用して SET NAMES 操作を実行します。 
+> クライアントはサーバーに接続するときに、使用する文字セットの名前を送信します。サーバーはこの名前を使用して、character_set_client、character_set_results、および character_set_connection システム変数を設定します。実際には、サーバーは文字セット名を使用して SET NAMES 操作を実行します。
 
 ### (MySQL Charset) コネクション
 

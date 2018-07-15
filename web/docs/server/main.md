@@ -361,7 +361,7 @@ sudo emacs /etc/ssh/sshd_config
 -PermitRootLogin prohibit-password
 +PermitRootLogin no
  StrictModes yes
- 
+
  RSAAuthentication yes
  PubkeyAuthentication yes
  #AuthorizedKeysFile    %h/.ssh/authorized_keys
@@ -429,7 +429,7 @@ sudo apt install php7.0
 
 The following NEW packages will be installed:
   php-common{a} php7.0 php7.0-cli{a} php7.0-common{a}
-  php7.0-fpm{a} php7.0-json{a} php7.0-opcache{a} php7.0-readline{a} 
+  php7.0-fpm{a} php7.0-json{a} php7.0-opcache{a} php7.0-readline{a}
 ```
 
 ```
@@ -439,7 +439,6 @@ sudo apt install libapache2-mod-php7.0
 sudo apt install php7.0-mysql
 sudo apt install php7.0-curl
 sudo apt install php7.0-gd
-sudo apt install php7.0-mcrypt
 sudo apt install php7.0-mbstring
 sudo apt install php7.0-xml
 sudo apt install php7.0-intl
@@ -528,7 +527,7 @@ rbenv install --list
 -upload_max_filesize = 2M
 +;; upload_max_filesize = 2M
 +upload_max_filesize = 128M ;;changed
- 
+
  ; Maximum number of files that can be uploaded via a single request
 -max_file_uploads = 20
 +;; max_file_uploads = 20
@@ -621,6 +620,27 @@ mysql> show variables like 'char%';
 ```
 
 - NOTE: [MySQL補足情報](./note/mysql.md)
+
+### #17-1. MySQL 8.x を導入する
+
+- https://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/
+
+最新版のパッケージ URL は上記のページから辿れるダウンロードページを参照する。
+
+```
+wget https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb
+sudo dpkg -i mysql-apt-config_0.8.10-1_all.deb
+sudo apt update
+sudo apt install mysql-server
+```
+
+MySQL 8.0 ではデフォルトの文字セットが latin1 から utf8mb4 に変更された。
+
+- https://dev.mysql.com/doc/relnotes/mysql/8.0/en/news-8-0-1.html#mysqld-8-0-1-charset
+    - The default value of the character_set_server and character_set_database system variables has changed from `latin1` to `utf8mb4`.
+    - The default value of the collation_server and collation_database system variables has changed from `latin1_swedish_ci` to `utf8mb4_0900_ai_ci`.
+- デフォルトの照合順序 `utf8mb4_0900_ai_ci` は日本語を扱う場合に `utf8mb4_unicode_ci` と同様の問題が生じるため、`utf8mb4_ja_0900_as_cs` または `utf8mb4_bin` などを `collation-server` の項目で設定するとよい。
+    - `0900` は "The collation is based on Unicode Collation Algorithm (UCA) 9.0.0 ..." と書かれている通りの意味で付けられている。
 
 ## #18. MySQL 一般ユーザを作成する
 
@@ -784,7 +804,7 @@ sudo a2enmod ssl
 +#ServerTokens OS
  #ServerTokens Full
 +ServerTokens Prod
- 
+
  # Set to "EMail" to also include a mailto: link to the ServerAdmin.
  # Set to one of:  On | Off | EMail
 -#ServerSignature Off
@@ -818,7 +838,7 @@ sudo a2enmod ssl
 +export LANG=ja_JP.UTF-8
  ## Uncomment the following line to use the system default locale instead:
  #. /etc/default/locale
- 
+
  export LANG
 ```
 
@@ -1107,6 +1127,26 @@ sudo ln -nfs /etc/letsencrypt/live/example.org/fullchain.pem /etc/ssl/ssl-fullch
 sudo ln -nfs /etc/letsencrypt/live/example.org/privkey.pem /etc/ssl/ssl-privkey.pem
 ```
 
+### #23-1. letsencrypt でなく certbot を使う
+
+```
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt update
+sudo apt install certbot
+```
+
+PPA (Personal Package Archives) を追加した場合、公開鍵が有効期限切れなどで利用できないと `apt update` 中に GPG error が発生することがある。
+
+```
+W: GPG error: http://ppa.launchpad.net/certbot/certbot/ubuntu xenial InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 8C47BE8E75BCA694
+```
+
+この場合は、以下のようなコマンドで公開鍵を更新する。
+
+```
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8C47BE8E75BCA694
+```
+
 ## #24. httpd.conf の設定をする - HTTPS 篇
 
 `/etc/apache2/includes/https.conf` の差分
@@ -1287,7 +1327,7 @@ sudo emacs /etc/vsftpd.conf
 +allow_writeable_chroot=YES
 +local_root=/var/www/hosts
 +user_config_dir=/etc/vsftpd/vsftpd_user_conf
- 
+
  #
  # Uncomment this to indicate that vsftpd use a utf8 filesystem.
 ```
@@ -1366,20 +1406,20 @@ sudo emacs /etc/postfix/main.cf
 ```
  # is /etc/mailname.
  #myorigin = /etc/mailname
- 
+
 -smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
 +#smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
 +smtpd_banner = $myhostname ESMTP unknown
  biff = no
- 
+
  # appending .domain is the MUA's job.
  append_dot_mydomain = no
- 
+
  # Uncomment the next line to generate "delayed mail" warnings
  #delay_warning_time = 4h
- 
+
  readme_directory = no
- 
+
  # TLS parameters
 -smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
 -smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
@@ -1391,10 +1431,10 @@ sudo emacs /etc/postfix/main.cf
  smtpd_use_tls=yes
  smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
  smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
- 
+
  # See /usr/share/doc/postfix/TLS_README.gz in the postfix-doc package for
  # information on enabling SSL in the smtp client.
- 
+
  smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
  myhostname = example.org
  alias_maps = hash:/etc/aliases
@@ -1403,7 +1443,7 @@ sudo emacs /etc/postfix/main.cf
 -mydestination = $myhostname, example.org, localhost.org, , localhost
 +mydomain = example.org
 +mydestination = $mydomain, localhost.$mydomain, localhost
- relayhost = 
+ relayhost =
  mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
  mailbox_size_limit = 0
  recipient_delimiter = +
@@ -1442,7 +1482,7 @@ sudo apt install mailutils
 ```
  smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
  smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
- 
+
 +smtp_tls_CAfile = /etc/ssl/ssl-chain.pem
 +smtp_tls_security_level = may
 +smtpd_tls_received_header = yes
