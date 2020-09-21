@@ -1095,16 +1095,40 @@ Require valid-user
 - https://letsencrypt.jp/usage/
 
 ```
-sudo apt install letsencrypt python-letsencrypt-apache
-```
-
-```
 cd /etc/apache2/sites-available/
 sudo rm 000-default.conf default-ssl.conf
 ```
 
 ```
-sudo letsencrypt certonly --apache -d example.org -d www.example.org -d ssl.example.org
+sudo add-apt-repository ppa:certbot/certbot
+sudo apt update
+sudo apt install certbot
+```
+
+PPA (Personal Package Archives) を追加した場合、公開鍵が有効期限切れなどで利用できないと `apt update` 中に GPG error が発生することがある。
+
+```
+W: GPG error: http://ppa.launchpad.net/certbot/certbot/ubuntu xenial InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 8C47BE8E75BCA694
+```
+
+この場合は、以下のようなコマンドで公開鍵を更新する。
+
+```
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8C47BE8E75BCA694
+```
+
+
+```
+sudo certbot certonly --apache -d example.org -d www.example.org -d ssl.example.org
+
+# ワイルドカード証明書の場合
+sudo certbot certonly --manual -d 'example.org' -d '*.example.org' -m 'admin@example.org' --manual-public-ip-logging-ok --agree-tos --preferred-challenges dns-01 --server https://acme-v02.api.letsencrypt.org/directory
+# コマンド実行後に表示される ACME Challenge 文字列を _acme-challenge.example.org の TXT RR に設定する（TTL は 60 にしておく）
+```
+
+```
+# 更新
+certbot renew --apache --force-renew
 ```
 
 - /etc/letsencrypt/ を git 管理対象外にする
@@ -1125,26 +1149,6 @@ sudo ln -nfs /etc/letsencrypt/live/example.org/cert.pem /etc/ssl/ssl-cert.pem
 sudo ln -nfs /etc/letsencrypt/live/example.org/chain.pem /etc/ssl/ssl-chain.pem
 sudo ln -nfs /etc/letsencrypt/live/example.org/fullchain.pem /etc/ssl/ssl-fullchain.pem
 sudo ln -nfs /etc/letsencrypt/live/example.org/privkey.pem /etc/ssl/ssl-privkey.pem
-```
-
-### #23-1. letsencrypt でなく certbot を使う
-
-```
-sudo add-apt-repository ppa:certbot/certbot
-sudo apt update
-sudo apt install certbot
-```
-
-PPA (Personal Package Archives) を追加した場合、公開鍵が有効期限切れなどで利用できないと `apt update` 中に GPG error が発生することがある。
-
-```
-W: GPG error: http://ppa.launchpad.net/certbot/certbot/ubuntu xenial InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY 8C47BE8E75BCA694
-```
-
-この場合は、以下のようなコマンドで公開鍵を更新する。
-
-```
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8C47BE8E75BCA694
 ```
 
 ## #24. httpd.conf の設定をする - HTTPS 篇
@@ -1187,7 +1191,19 @@ sudo emacs /etc/ssl/update_letsencrypt.sh
 ```
 #!/bin/sh
 
-letsencrypt renew --apache --force-renew
+certbot renew --apache --force-renew
+```
+
+```
+sudo emacs /etc/ssl/restart_ssl_services.sh
+```
+
+```
+#!/bin/sh
+
+service apache2 restart
+service vsftpd restart
+service postfix restart
 ```
 
 ```
@@ -1198,9 +1214,7 @@ sudo emacs /etc/ssl/update_letsencrypt_and_postprocess.sh
 #!/bin/sh
 
 /etc/ssl/update_letsencrypt.sh
-service apache2 restart
-service vsftpd restart
-service postfix restart
+/etc/ssl/restart_ssl_services.sh
 ```
 
 ```
