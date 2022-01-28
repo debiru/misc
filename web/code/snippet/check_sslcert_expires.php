@@ -52,6 +52,12 @@ class CheckSSLCertExpires {
     return date('Y/m/d H:i:s', $timestamp);
   }
 
+  public static function jst2utc($datetimeStr) {
+    $dt = new DateTime($datetimeStr);
+    $dt->setTimeZone(new DateTimeZone('UTC'));
+    return $dt->format('Y-m-d\TH:i:s\Z');
+  }
+
   public static function diffdays($startDatetime, $endDatetime) {
     return (int)date_diff(new DateTime($startDatetime), new DateTime($endDatetime))->format('%r%a');
   }
@@ -108,10 +114,17 @@ class CheckSSLCertExpires {
     };
 
     $result['CA'] = $parsed['issuer']['O'];
+
     $result['updated_at'] = self::datetime($parsed['validFrom_time_t']);
     $result['expires_at'] = self::datetime($parsed['validTo_time_t']);
-
     $result['today'] = $this->today;
+
+    $result['UTC'] = [
+      'updated_at' => self::jst2utc($result['updated_at']),
+      'expires_at' => self::jst2utc($result['expires_at']),
+      'today'=> self::jst2utc($result['today']),
+    ];
+
     $result['remaining_days'] = self::diffdays($result['today'], $result['expires_at']);
 
     return $result;
