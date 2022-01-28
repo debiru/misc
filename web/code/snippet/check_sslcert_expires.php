@@ -1,4 +1,5 @@
 <?php
+// NYSL License (Version 0.9982 http://www.kmonos.net/nysl/)
 
 date_default_timezone_set('Asia/Tokyo');
 
