@@ -26,8 +26,7 @@ else {
 $main = new CheckSSLCertExpires();
 $result = $main->checkExpire($hosts);
 
-header('Content-Type: application/json; charset=utf-8');
-echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), PHP_EOL;
+CheckSSLCertExpires::renderJson($result, @$_GET['callback']);
 
 class CheckSSLCertExpires {
   const CONNECTION_TIMEOUT = 5;
@@ -45,15 +44,15 @@ class CheckSSLCertExpires {
     return $result;
   }
 
-  static public function isMatchSuffix($haystack, $needle) {
+  public static function isMatchSuffix($haystack, $needle) {
     return strpos(strrev($haystack), strrev($needle)) === 0;
   }
 
-  static public function datetime($timestamp) {
+  public static function datetime($timestamp) {
     return date('Y/m/d H:i:s', $timestamp);
   }
 
-  static public function diffdays($startDatetime, $endDatetime) {
+  public static function diffdays($startDatetime, $endDatetime) {
     return (int)date_diff(new DateTime($startDatetime), new DateTime($endDatetime))->format('%r%a');
   }
 
@@ -116,5 +115,22 @@ class CheckSSLCertExpires {
     $result['remaining_days'] = self::diffdays($result['today'], $result['expires_at']);
 
     return $result;
+  }
+
+  public static function renderJson($object, $callbackName = null) {
+    $json = json_encode($object, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+    if (!preg_match('/\A[A-Za-z][0-9A-Za-z_]*\z/', $callbackName)) $callbackName = null;
+    $useJsonp = !empty($callbackName);
+
+    if ($useJsonp) {
+      header('Content-Type: application/javascript; charset=utf-8');
+      $jsonp = sprintf('%s(%s);', $callbackName, $json);
+      echo $jsonp, PHP_EOL;
+    }
+    else {
+      header('Content-Type: application/json; charset=utf-8');
+      echo $json, PHP_EOL;
+    }
   }
 }
