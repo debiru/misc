@@ -104,6 +104,7 @@ class CheckSSLCertExpires {
 
     $result = [];
     $result['domainName'] = $domainName;
+    $result['serial'] = $parsed['serialNumberHex'];
     $result['port'] = $port;
 
     $result['subjectAltName'] = null;
