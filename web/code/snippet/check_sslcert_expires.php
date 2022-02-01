@@ -103,8 +103,11 @@ class CheckSSLCertExpires {
     $parsed = openssl_x509_parse($params['options']['ssl']['peer_certificate']);
 
     $result = [];
-    $result['domainName'] = $domainName;
+
     $result['serial'] = $parsed['serialNumberHex'];
+    $result['OCSP_serial'] = self::getSerialFromOCSP($domainName);
+
+    $result['domainName'] = $domainName;
     $result['port'] = $port;
 
     $result['subjectAltName'] = null;
@@ -146,5 +149,28 @@ class CheckSSLCertExpires {
       header('Content-Type: application/json; charset=utf-8');
       echo $json, PHP_EOL;
     }
+  }
+
+  public static function mycmd() {
+    $arg_list = func_get_args();
+    $format = array_shift($arg_list);
+    foreach ($arg_list as &$arg) {
+      $arg = escapeshellarg($arg);
+    }
+    return vsprintf($format, $arg_list);
+  }
+
+  public static function myexec($command, &$output = null, &$return_var = null) {
+    exec($command, $output, $return_var);
+    return $return_var === 0;
+  }
+
+  public static function getSerialFromOCSP($domain) {
+    $arg = sprintf('%s:https', $domain);
+    $cmd = self::mycmd('openssl s_client -connect %s -servername %s -CApath /etc/ssl/certs -status < /dev/null 2> /dev/null | ag "Serial Number" | perl -pe "s/^\s*Serial Number:\s*//"', $arg, $domain);
+    self::myexec($cmd, $output);
+
+    if (empty($output)) return null;
+    return $output[0];
   }
 }
