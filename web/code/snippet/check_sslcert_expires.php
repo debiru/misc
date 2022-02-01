@@ -105,7 +105,11 @@ class CheckSSLCertExpires {
     $result = [];
 
     $result['serial'] = $parsed['serialNumberHex'];
-    $result['OCSP_serial'] = self::getSerialFromOCSP($domainName);
+
+    $ocsp = self::getOCSP($domainName);
+    $result['OCSP_serial'] = $ocsp['serial'];
+    $result['OCSP_this_update'] = $ocsp['this_update'];
+    $result['OCSP_next_update'] = $ocsp['next_update'];
 
     $result['domainName'] = $domainName;
     $result['port'] = $port;
@@ -165,12 +169,17 @@ class CheckSSLCertExpires {
     return $return_var === 0;
   }
 
-  public static function getSerialFromOCSP($domain) {
+  public static function getOCSP($domain) {
     $arg = sprintf('%s:https', $domain);
-    $cmd = self::mycmd('openssl s_client -connect %s -servername %s -CApath /etc/ssl/certs -status < /dev/null 2> /dev/null | ag "Serial Number" | perl -pe "s/^\s*Serial Number:\s*//"', $arg, $domain);
+    $cmd = self::mycmd('openssl s_client -connect %s -servername %s -CApath /etc/ssl/certs -status < /dev/null 2> /dev/null | ag "Serial Number|This Update|Next Update" | perl -pe "s/^\s*[^:]+:\s*//"', $arg, $domain);
     self::myexec($cmd, $output);
 
-    if (empty($output)) return null;
-    return $output[0];
+    $ocsp = [
+      'serial' => $output[0] ?? null,
+      'this_update' => $output[1] ?? null,
+      'next_update' => $output[2] ?? null,
+    ];
+
+    return $ocsp;
   }
 }
