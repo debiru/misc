@@ -44,7 +44,7 @@ class OCSP {
   public static function apiGetOCSP($serial) {
     $url = sprintf('http://%s', self::RESPONDER);
     $host = sprintf('HOST=%s', self::RESPONDER);
-    $grep = self::isJsonResponse() ? ' | ag "^(?:      Serial Number|    Cert Status|    This Update|    Next Update)" | perl -pe "s/^\s*[^:]+:\s*//"' : '';
+    $grep = self::isJsonResponse() ? ' | ag "^(?:\s{6}Serial Number|\s{4}Cert Status|\s{4}This Update|\s{4}Next Update)" | perl -pe "s/^\s*[^:]+:\s*//"' : '';
     $format = sprintf("openssl ocsp -noverify -no_nonce -issuer %%s -serial %%s -url %%s -header %%s -text%s", $grep);
     $cmd = self::mycmd($format, self::CA_CERT, $serial, $url, $host);
     self::myexec($cmd, $output);
@@ -75,7 +75,6 @@ class OCSP {
     $result = empty($serial) ? null : self::apiGetOCSP($serial);
 
     if (self::isJsonResponse()) {
-
       self::outputJson($result, $query);
     }
     else {
