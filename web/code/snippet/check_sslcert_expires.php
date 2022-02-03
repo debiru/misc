@@ -1,12 +1,12 @@
 <?php
 // NYSL License (Version 0.9982 http://www.kmonos.net/nysl/)
 
-date_default_timezone_set('Asia/Tokyo');
+// date_default_timezone_set('Asia/Tokyo');
 
 $isCLI = php_sapi_name() === 'cli';
 
 $hosts = [
-  'example.com',
+  'lavoscore.org',
 ];
 
 if ($isCLI) {
@@ -108,6 +108,7 @@ class CheckSSLCertExpires {
 
     $ocsp = self::getOCSP($domainName);
     $result['OCSP_serial'] = $ocsp['serial'];
+    $result['OCSP_cert_status'] = $ocsp['cert_status'];
     $result['OCSP_this_update'] = $ocsp['this_update'];
     $result['OCSP_next_update'] = $ocsp['next_update'];
 
@@ -171,13 +172,14 @@ class CheckSSLCertExpires {
 
   public static function getOCSP($domain) {
     $arg = sprintf('%s:https', $domain);
-    $cmd = self::mycmd('openssl s_client -connect %s -servername %s -CApath /etc/ssl/certs -status < /dev/null 2> /dev/null | ag "Serial Number|This Update|Next Update" | perl -pe "s/^\s*[^:]+:\s*//"', $arg, $domain);
+    $cmd = self::mycmd('openssl s_client -connect %s -servername %s -CApath /etc/ssl/certs -status < /dev/null 2> /dev/null | ag "Serial Number|Cert Status|This Update|Next Update" | perl -pe "s/^\s*[^:]+:\s*//"', $arg, $domain);
     self::myexec($cmd, $output);
 
     $ocsp = [
       'serial' => $output[0] ?? null,
-      'this_update' => $output[1] ?? null,
-      'next_update' => $output[2] ?? null,
+      'cert_status' => $output[1] ?? null,
+      'this_update' => $output[2] ?? null,
+      'next_update' => $output[3] ?? null,
     ];
 
     return $ocsp;

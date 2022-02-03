@@ -44,7 +44,7 @@ class OCSP {
   public static function apiGetOCSP($serial) {
     $url = sprintf('http://%s', self::RESPONDER);
     $host = sprintf('HOST=%s', self::RESPONDER);
-    $grep = self::isJsonResponse() ? ' | ag "^(?:      Serial Number|    This Update|    Next Update)" | perl -pe "s/^\s*[^:]+:\s*//"' : '';
+    $grep = self::isJsonResponse() ? ' | ag "^(?:      Serial Number|    Cert Status|    This Update|    Next Update)" | perl -pe "s/^\s*[^:]+:\s*//"' : '';
     $format = sprintf("openssl ocsp -noverify -no_nonce -issuer %%s -serial %%s -url %%s -header %%s -text%s", $grep);
     $cmd = self::mycmd($format, self::CA_CERT, $serial, $url, $host);
     self::myexec($cmd, $output);
@@ -88,8 +88,9 @@ class OCSP {
 
     $ocsp = [
       'serial' => $result[0] ?? null,
-      'this_update' => $result[1] ?? null,
-      'next_update' => $result[2] ?? null,
+      'cert_status' => $result[1] ?? null,
+      'this_update' => $result[2] ?? null,
+      'next_update' => $result[3] ?? null,
     ];
 
     $json = json_encode($ocsp, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -111,7 +112,8 @@ class OCSP {
         echo "  Domain Name: ?q=lavoscore.org\n";
       }
       else {
-        echo "Failed. It appears to be an invalid value. Require \"q\" parameter as Serial or DomainName.\n\n";
+        echo "Failed. It appears to be an invalid value. Require \"q\" parameter as Serial or DomainName.\n";
+        echo "Serial is only allowed from Let's encrypt (it's length is 36).\n\n";
         var_dump($query);
       }
     }
