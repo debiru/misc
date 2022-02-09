@@ -142,7 +142,7 @@ class CheckSSLCertExpires {
   public static function renderJson($object, $callbackName = null) {
     $json = json_encode($object, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-    if (!preg_match('/\A[A-Za-z][0-9A-Za-z_]*\z/', $callbackName)) $callbackName = null;
+    if (!preg_match('/\A[A-Za-z][0-9A-Za-z_]*\z/', $callbackName ?? '')) $callbackName = null;
     $useJsonp = !empty($callbackName);
 
     if ($useJsonp) {
